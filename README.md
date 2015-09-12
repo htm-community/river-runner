@@ -38,6 +38,12 @@ Options:
                         model on.
 ```
 
+## Example
+
+The following will fetch data from the [ERCOT System Wide Demand](http://data.numenta.org/ercot-demand/system_wide_demand/data.html?limit=500) stream, analyzing and plotting the `Demand` field.
+
+    ./run.py -r ercot-demand -s system_wide_demand -f Demand --plot
+
 ## A Note about predictions...
 
 While the plot and the output file contains predictions from the NuPIC model, the model parameters used to create the model were not optimized for prediction. Therefore, the predictions will very likely be inaccurate. This example program is best suited for identifying anomalies within River data streams.
