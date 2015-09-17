@@ -137,7 +137,7 @@ def getMinMax(data, field):
     if min is None:
       min = value
       max = value
-    else:
+    if value is not None:
       if value < min:
         min = value
       if value > max:
@@ -159,15 +159,16 @@ def runModel(model, data, field, plot):
     dateString = dataPoint[datetimeIndex]
     timestamp = datetime.datetime.strptime(dateString, DATE_FORMAT)
     value = dataPoint[fieldIndex]
-    result = model.run({
-      "timestamp": timestamp,
-      "value": value
-    })
-    if plot:
-      result = shifter.shift(result)
-    prediction = result.inferences["multiStepBestPredictions"][1]
-    anomalyScore = result.inferences["anomalyScore"]
-    output.write(timestamp, value, prediction, anomalyScore)
+    if value is not None:
+      result = model.run({
+        "timestamp": timestamp,
+        "value": value
+      })
+      if plot:
+        result = shifter.shift(result)
+      prediction = result.inferences["multiStepBestPredictions"][1]
+      anomalyScore = result.inferences["anomalyScore"]
+      output.write(timestamp, value, prediction, anomalyScore)
 
   output.close()
 
@@ -184,6 +185,7 @@ if __name__ == "__main__":
 
   data = fetchData(url, river, stream)
   (min, max) = getMinMax(data, field)
+  print min, max
 
   modelParams = getModelParams(min, max)
   model = createModel(modelParams)
