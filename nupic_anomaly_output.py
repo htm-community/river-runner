@@ -49,8 +49,12 @@ class NuPICOutput(object):
   __metaclass__ = ABCMeta
 
 
-  def __init__(self, name):
+  def __init__(self, name, outputLog=False):
+    """
+    If outputLog is True, the log of the likelihood will be output.
+    """
     self.name = name
+    self.outputLog = outputLog
     self.anomalyLikelihoodHelper = anomaly_likelihood.AnomalyLikelihood()
 
 
@@ -92,6 +96,9 @@ class NuPICFileOutput(NuPICOutput):
       anomalyLikelihood = self.anomalyLikelihoodHelper.anomalyProbability(
         value, anomalyScore, timestamp
       )
+      if self.outputLog:
+        anomalyLikelihood = self.anomalyLikelihoodHelper.computeLogLikelihood(
+          anomalyLikelihood)
       outputRow = [timestamp, value, predicted, anomalyScore, anomalyLikelihood]
       self.outputWriter.writerow(outputRow)
       self.lineCount += 1
@@ -263,6 +270,9 @@ class NuPICPlotOutput(NuPICOutput):
     anomalyLikelihood = self.anomalyLikelihoodHelper.anomalyProbability(
       value, anomalyScore, timestamp
     )
+    if self.outputLog:
+      anomalyLikelihood = self.anomalyLikelihoodHelper.computeLogLikelihood(
+        anomalyLikelihood)
 
     self.dates.append(timestamp)
     self.convertedDates.append(date2num(timestamp))
