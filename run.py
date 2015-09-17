@@ -185,7 +185,6 @@ if __name__ == "__main__":
 
   data = fetchData(url, river, stream)
   (min, max) = getMinMax(data, field)
-  print min, max
 
   modelParams = getModelParams(min, max)
   model = createModel(modelParams)
