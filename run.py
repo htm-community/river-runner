@@ -84,6 +84,20 @@ parser.add_option(
   default=DEFAULT_FIELD,
   dest="field",
   help="Which field of data within stream to build anomaly model on.")
+parser.add_option(
+  "-d",
+  "--datapoints",
+  default=DEFAULT_DATA_LIMIT,
+  dest="dataLimit",
+  help="Max number of data points to retrieve")
+parser.add_option(
+  "-l",
+  "--log",
+  action="store_true",
+  default=False,
+  dest="log",
+  help="Compute the log of anomaly likelihood "
+       "(this is more useful for plotting)")
 
 
 
@@ -145,15 +159,15 @@ def getMinMax(data, field):
   return (min, max)
 
 
-def runModel(model, data, field, plot):
+def runModel(model, data, field, plot, logLikelihood):
   fieldIndex = data['headers'].index(field)
   datetimeIndex = data['headers'].index(DATETIME_FIELDNAME)
 
   shifter = InferenceShifter()
   if plot:
-    output = nupic_anomaly_output.NuPICPlotOutput(field)
+    output = nupic_anomaly_output.NuPICPlotOutput(field, logLikelihood)
   else:
-    output = nupic_anomaly_output.NuPICFileOutput(field)
+    output = nupic_anomaly_output.NuPICFileOutput(field, logLikelihood)
 
   for dataPoint in data['data']:
     dateString = dataPoint[datetimeIndex]
@@ -183,9 +197,10 @@ if __name__ == "__main__":
   field = options.field
   url = options.url
 
-  data = fetchData(url, river, stream)
+  data = fetchData(url, river, stream,
+                   {'limit': options.dataLimit})
   (min, max) = getMinMax(data, field)
 
   modelParams = getModelParams(min, max)
   model = createModel(modelParams)
-  runModel(model, data, field, plot)
+  runModel(model, data, field, plot, options.log)
