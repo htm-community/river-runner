@@ -84,6 +84,13 @@ parser.add_option(
   default=DEFAULT_FIELD,
   dest="field",
   help="Which field of data within stream to build anomaly model on.")
+parser.add_option(
+  "-a",
+  "--aggregate",
+  default=None,
+  dest="aggregate",
+  help="How should the data be aggregated (default None). If provided, the -f "
+       "option is ignored. This only works with geospatial rivers.")
 
 
 
@@ -105,17 +112,19 @@ def createModel(modelParams):
 
 
 
-def fetchData(url, river, stream, params=None):
-  if params is None:
+def fetchData(url, river, stream, aggregate, params=None):
+  if params is None and aggregate is None:
     params = {'limit': DEFAULT_DATA_LIMIT}
   targetUrl = "%s/%s/%s/data.json" % (url, river, stream)
+  if aggregate:
+    targetUrl += "?aggregate=%s" % aggregate
   print "Fetching data from %s..." % targetUrl
   response = requests.get(targetUrl, params=params)
   if response.status_code == 404:
     raise Exception('The River or stream provided does not exist:\n%s'
                     % targetUrl)
   data = response.json()
-  if not data['type'] == 'scalar':
+  if not data['type'] == 'scalar' and aggregate is None:
     raise Exception('Cannot process Rivers unless they are scalar.\n%s does '
                     'not return scalar data.' % targetUrl)
   return data
@@ -182,8 +191,12 @@ if __name__ == "__main__":
   stream = options.stream
   field = options.field
   url = options.url
+  aggregate = options.aggregate
+  
+  if aggregate:
+    field = 'count'
 
-  data = fetchData(url, river, stream)
+  data = fetchData(url, river, stream, aggregate)
   (min, max) = getMinMax(data, field)
 
   modelParams = getModelParams(min, max)
