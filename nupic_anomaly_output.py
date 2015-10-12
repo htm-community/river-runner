@@ -37,7 +37,7 @@ try:
 except ImportError:
   pass
 
-WINDOW = 300
+WINDOW = 500
 HIGHLIGHT_ALPHA = 0.3
 ANOMALY_HIGHLIGHT_COLOR = 'red'
 WEEKEND_HIGHLIGHT_COLOR = 'yellow'
@@ -49,8 +49,12 @@ class NuPICOutput(object):
   __metaclass__ = ABCMeta
 
 
-  def __init__(self, name):
+  def __init__(self, name, outputLog=False):
+    """
+    If outputLog is True, the log of the likelihood will be output.
+    """
     self.name = name
+    self.outputLog = outputLog
     self.anomalyLikelihoodHelper = anomaly_likelihood.AnomalyLikelihood()
 
 
@@ -92,6 +96,9 @@ class NuPICFileOutput(NuPICOutput):
       anomalyLikelihood = self.anomalyLikelihoodHelper.anomalyProbability(
         value, anomalyScore, timestamp
       )
+      if self.outputLog:
+        anomalyLikelihood = self.anomalyLikelihoodHelper.computeLogLikelihood(
+          anomalyLikelihood)
       outputRow = [timestamp, value, predicted, anomalyScore, anomalyLikelihood]
       self.outputWriter.writerow(outputRow)
       self.lineCount += 1
@@ -192,8 +199,8 @@ class NuPICPlotOutput(NuPICOutput):
     plt.xlabel('Date')
 
     # Maximizes window
-    mng = plt.get_current_fig_manager()
-    mng.resize(*mng.window.maxsize())
+    # mng = plt.get_current_fig_manager()
+    # mng.resize(*mng.window.maxsize())
 
     plt.tight_layout()
 
@@ -263,6 +270,9 @@ class NuPICPlotOutput(NuPICOutput):
     anomalyLikelihood = self.anomalyLikelihoodHelper.anomalyProbability(
       value, anomalyScore, timestamp
     )
+    if self.outputLog:
+      anomalyLikelihood = self.anomalyLikelihoodHelper.computeLogLikelihood(
+        anomalyLikelihood)
 
     self.dates.append(timestamp)
     self.convertedDates.append(date2num(timestamp))

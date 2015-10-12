@@ -91,6 +91,20 @@ parser.add_option(
   dest="aggregate",
   help="How should the data be aggregated (default None). If provided, the -f "
        "option is ignored. This only works with geospatial rivers.")
+parser.add_option(
+  "-d",
+  "--datapoints",
+  default=DEFAULT_DATA_LIMIT,
+  dest="dataLimit",
+  help="Max number of data points to retrieve")
+parser.add_option(
+  "-l",
+  "--log",
+  action="store_true",
+  default=False,
+  dest="log",
+  help="Compute the log of anomaly likelihood "
+       "(this is more useful for plotting)")
 
 
 
@@ -154,15 +168,15 @@ def getMinMax(data, field):
   return (min, max)
 
 
-def runModel(model, data, field, plot):
+def runModel(model, data, field, plot, logLikelihood):
   fieldIndex = data['headers'].index(field)
   datetimeIndex = data['headers'].index(DATETIME_FIELDNAME)
 
   shifter = InferenceShifter()
   if plot:
-    output = nupic_anomaly_output.NuPICPlotOutput(field)
+    output = nupic_anomaly_output.NuPICPlotOutput(field, logLikelihood)
   else:
-    output = nupic_anomaly_output.NuPICFileOutput(field)
+    output = nupic_anomaly_output.NuPICFileOutput(field, logLikelihood)
 
   for dataPoint in data['data']:
     dateString = dataPoint[datetimeIndex]
@@ -196,9 +210,10 @@ if __name__ == "__main__":
   if aggregate:
     field = 'count'
 
-  data = fetchData(url, river, stream, aggregate)
+  data = fetchData(url, river, stream, aggregate,
+                   {'limit': options.dataLimit})
   (min, max) = getMinMax(data, field)
 
   modelParams = getModelParams(min, max)
   model = createModel(modelParams)
-  runModel(model, data, field, plot)
+  runModel(model, data, field, plot, options.log)
