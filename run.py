@@ -25,7 +25,7 @@ import importlib
 import datetime
 from optparse import OptionParser
 
-import requests
+from riverpy import RiverViewClient
 
 from nupic.data.inference_shifter import InferenceShifter
 from nupic.frameworks.opf.modelfactory import ModelFactory
@@ -33,7 +33,7 @@ from nupic.frameworks.opf.modelfactory import ModelFactory
 import nupic_anomaly_output
 
 
-DEFAULT_RIVER_VIEW_URL = "http://data.numenta.org"
+DEFAULT_RIVER_VIEW_URL = "http://data.numenta.org/"
 DEFAULT_RIVER = "chicago-beach-weather"
 DEFAULT_STREAM = "Oak Street Weather Station"
 DEFAULT_FIELD = "solar_radiation"
@@ -127,29 +127,36 @@ def createModel(modelParams):
 
 
 def fetchData(url, river, stream, aggregate, params=None):
-  if params is None and aggregate is None:
-    params = {'limit': DEFAULT_DATA_LIMIT}
-  targetUrl = "%s/%s/%s/data.json" % (url, river, stream)
-  if aggregate:
-    targetUrl += "?aggregate=%s" % aggregate
-  print "Fetching data from %s..." % targetUrl
-  response = requests.get(targetUrl, params=params)
-  if response.status_code == 404:
-    raise Exception('The River or stream provided does not exist:\n%s'
-                    % targetUrl)
-  data = response.json()
-  if not data['type'] == 'scalar' and aggregate is None:
+  client = RiverViewClient(url)
+  r = client.river(river)
+  s = r.stream(stream)
+
+  cursor = s.data(**params)
+  type = cursor.get("type")
+  
+  # if params is None and aggregate is None:
+  #   params = {'limit': DEFAULT_DATA_LIMIT}
+  # targetUrl = "%s/%s/%s/data.json" % (url, river, stream)
+  # if aggregate:
+  #   targetUrl += "?aggregate=%s" % aggregate
+  # print "Fetching data from %s..." % targetUrl
+  # response = requests.get(targetUrl, params=params)
+  # if response.status_code == 404:
+  #   raise Exception('The River or stream provided does not exist:\n%s'
+  #                   % targetUrl)
+  # data = response.json()
+  if not type == 'scalar' and aggregate is None:
     raise Exception('Cannot process Rivers unless they are scalar.\n%s does '
-                    'not return scalar data.' % targetUrl)
-  return data
+                    'not return scalar data.' % river)
+  return cursor
 
 
 
 def getMinMax(data, field):
   min = None
   max = None
-  headers = data['headers']
-  payload = data['data']
+  headers = data.headers()
+  payload = data.data()
   try:
     fieldIndex = headers.index(field)
   except ValueError:
@@ -169,8 +176,8 @@ def getMinMax(data, field):
 
 
 def runModel(model, data, field, plot, logLikelihood):
-  fieldIndex = data['headers'].index(field)
-  datetimeIndex = data['headers'].index(DATETIME_FIELDNAME)
+  fieldIndex = data.headers().index(field)
+  datetimeIndex = data.headers().index(DATETIME_FIELDNAME)
 
   shifter = InferenceShifter()
   if plot:
@@ -178,7 +185,7 @@ def runModel(model, data, field, plot, logLikelihood):
   else:
     output = nupic_anomaly_output.NuPICFileOutput(field, logLikelihood)
 
-  for dataPoint in data['data']:
+  for dataPoint in data.data():
     dateString = dataPoint[datetimeIndex]
     timestamp = datetime.datetime.strptime(dateString, DATE_FORMAT)
     value = dataPoint[fieldIndex]

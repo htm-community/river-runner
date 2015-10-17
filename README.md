@@ -5,7 +5,7 @@ This is a Python project that runs NuPIC **anomaly detection** models against da
 ## Requires
 
 - matplotlib (if you want to use the `--plot` option) [recommended]
-- [requests](http://www.python-requests.org/)
+- [`riverpy`](https://github.com/nupic-community/riverpy) (`pip install riverpy`)
 - [NuPIC](https://github.com/numenta/nupic)
 
 ## Run it
