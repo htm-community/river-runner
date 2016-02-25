@@ -133,7 +133,7 @@ def fetchData(url, river, stream, aggregate, params=None):
 
   cursor = s.data(**params)
   type = cursor.get("type")
-  
+
   # if params is None and aggregate is None:
   #   params = {'limit': DEFAULT_DATA_LIMIT}
   # targetUrl = "%s/%s/%s/data.json" % (url, river, stream)
@@ -213,7 +213,7 @@ if __name__ == "__main__":
   field = options.field
   url = options.url
   aggregate = options.aggregate
-  
+
   if aggregate:
     field = 'count'
 
